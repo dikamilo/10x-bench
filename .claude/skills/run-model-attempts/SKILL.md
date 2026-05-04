@@ -83,15 +83,17 @@ cp -r "$WORKSPACE/." "eval-attempts/{model-id}-attempt-{n}/"
 
 Base image: `golang:1.23-bookworm` (includes Go runtime the agent will need for Go benchmarks; adjust for other stacks)
 
+opencode stores credentials in `~/.local/share/opencode/auth.json` (XDG standard on Linux). Mount it read-only rather than passing the raw key as an environment variable.
+
 ```bash
 docker run --rm \
   -v "$WORKSPACE":/workspace \
+  -v "$HOME/.local/share/opencode/auth.json":/root/.local/share/opencode/auth.json:ro \
   -w /workspace \
-  -e OPENROUTER_API_KEY="$OPENROUTER_API_KEY" \
   --network bridge \
   golang:1.23-bookworm \
   bash -c '
-    curl -fsSL https://opencode.ai/install | sh
+    curl -fsSL https://opencode.ai/install | bash
     export PATH="$HOME/.opencode/bin:$PATH"
     opencode run \
       -m openrouter/<provider>/<model> \
@@ -99,6 +101,11 @@ docker run --rm \
       "$(cat /workspace/prompt.md)"
   ' 2>&1 | tee "$WORKSPACE/agent-run.log"
 ```
+
+Notes:
+- Pipe the installer to `bash`, not `sh` — the install script uses bash-specific features (`set -o pipefail`) that fail silently under `sh`.
+- The `auth.json` mount is read-only (`:ro`) so the container cannot modify host credentials.
+- Do not pass `OPENROUTER_API_KEY` as a plain env var; the mounted auth file is the canonical credential source for opencode.
 
 Common OpenRouter provider prefixes:
 - Moonshot (Kimi): `openrouter/moonshotai/<model>`
