@@ -11,19 +11,22 @@ Runs one-shot implementation attempts for a benchmark case while preserving isol
 
 Required:
 
+- `benchmark/runner.yaml` — names the benchmark Docker image, allowed harnesses, default attempt count, prompt path
 - `benchmark/prompt.md`
 - `benchmark/context.md` if present
 - `benchmark/baseline-manifest.md` if present
-- model or harness list
+- model or harness list (or use `runner.yaml` defaults)
 
 Optional:
 
 - `benchmark/bootstrap.md` if intentionally model-visible
-- number of attempts per model
+- number of attempts per model (overrides `attempts_default`)
 - starter scaffold path
 - output run ID
 
 Never use `benchmark/scorecard.md` as an input for model attempts.
+
+The skill resolves the image declared in `runner.yaml`, pins its digest, and reuses it across all attempts of the run. The image already contains the three coding-agent CLIs (claude-code, codex, opencode) plus the `run-attempt` orchestrator. Per-benchmark images add only the stack runtime needed by the agent (Node, Go, Python, JDK, …) — see `images/README.md`.
 
 ## Isolation Contract
 
@@ -52,62 +55,85 @@ The Docker container is the isolation unit. The entire harness session — every
 
 ### Standard execution pattern
 
+The skill resolves the benchmark image once, then runs N attempts against it. The image already has the three CLIs and the `run-attempt` orchestrator baked in — there is no per-attempt install step.
+
 ```bash
+# Resolve image once per run. Tolerant of local-only tags so a demo build
+# (`docker build -t 10xbench/przeprogramowani:demo benchmark`) works without
+# a registry; remote tags still pull as normal.
+IMAGE=$(yq -r '.image' benchmark/runner.yaml)
+docker pull "$IMAGE" 2>/dev/null \
+  || docker image inspect "$IMAGE" >/dev/null \
+  || { echo "image not pullable and not present locally: $IMAGE" >&2; exit 1; }
+IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE" 2>/dev/null \
+               || docker inspect --format='{{.Id}}' "$IMAGE")
+
+# Per attempt
 WORKSPACE=$(mktemp -d /private/tmp/10x-eval-runs/XXXXXX)
 
-# Copy only allowed benchmark files
 cp benchmark/prompt.md "$WORKSPACE/"
 cp benchmark/context.md "$WORKSPACE/" 2>/dev/null || true
-# copy bootstrap.md only if intentionally model-visible
+# brownfield: also copy a fresh baseline per benchmark/baseline-manifest.md
+# bootstrap.md: copy only if intentionally model-visible
 
-# Run the entire harness session inside the container
 docker run --rm \
-  --name "attempt-{model-id}-{n}" \
+  --name "attempt-${MODEL_ID}-${N}" \
   -v "$WORKSPACE":/workspace \
-  -w /workspace \
-  -e OPENROUTER_API_KEY="$OPENROUTER_API_KEY" \
-  --network bridge \
-  <base-image> \
-  bash -c '<install-harness> && <run-harness-with-prompt>' \
+  "$IMAGE" \
+    --harness "$HARNESS" \
+    --token   "$TOKEN" \
+    --model   "$MODEL" \
   2>&1 | tee "$WORKSPACE/agent-run.log"
 
-# Copy result to repo
-cp -r "$WORKSPACE/." "eval-attempts/{model-id}-attempt-{n}/"
+cp -r "$WORKSPACE/." "eval-attempts/${MODEL_ID}-attempt-${N}/"
 ```
 
-`docker logs` / tee captures the full session as `agent-run.log` automatically.
+`tee` captures the full session as `agent-run.log` inside the workspace. The orchestrator (`/usr/local/bin/run-attempt` in the image) handles harness-specific auth wiring; the caller stays uniform across `claude-code`, `codex`, and `opencode`.
 
-### Per-harness container commands
+### Token resolution
 
-#### OpenCode via OpenRouter
+The skill reads the host environment for the harness-appropriate key and passes it via `--token`. It does not propagate the raw env var into the container.
 
-Base image: `golang:1.23-bookworm` (includes Go runtime the agent will need for Go benchmarks; adjust for other stacks)
+| `--harness` | Required host env var | Inside the container |
+|---|---|---|
+| `claude-code` | `ANTHROPIC_API_KEY` | promoted to `ANTHROPIC_API_KEY` |
+| `codex` | `OPENAI_API_KEY` | promoted to `OPENAI_API_KEY` |
+| `opencode` | `OPENROUTER_API_KEY` | written to `~/.local/share/opencode/auth.json` |
 
-opencode stores credentials in `~/.local/share/opencode/auth.json` (XDG standard on Linux). Mount it read-only rather than passing the raw key as an environment variable.
+### Model resolution
+
+For each `(harness, attempt)` the skill resolves `--model` in this order:
+
+1. **Explicit on the call.** When the user says "run kimi k2.5 via opencode", the skill passes `--model openrouter/moonshotai/kimi-k2` to `run-attempt`.
+2. **`runner.yaml -> defaults.<harness>.model`.** Used when no model is given on the call. Useful for demos so the operator doesn't have to retype a long OpenRouter id.
+3. **CLI vendor default.** When `--model` is not provided at all, `claude-code` and `codex` use whatever their CLI defaults to. **`opencode` errors** here — there is no vendor default.
+
+Implications:
+
+- `opencode` must have a model resolved by step 1 or 2, otherwise `run-attempt` exits with code 4.
+- For `claude-code` / `codex`, omitting `--model` is fine but means the run is not pinned to a specific model tier — `run-log.md` should record this as `model: <vendor-default>`.
+- The output directory name `${MODEL_ID}-attempt-${N}` should reflect the *resolved* model, not just the harness, so multiple `claude-code` runs with different `--model` values don't collide.
+
+Example invocation patterns:
 
 ```bash
-docker run --rm \
-  -v "$WORKSPACE":/workspace \
-  -v "$HOME/.local/share/opencode/auth.json":/root/.local/share/opencode/auth.json:ro \
-  -w /workspace \
-  --network bridge \
-  golang:1.23-bookworm \
-  bash -c '
-    curl -fsSL https://opencode.ai/install | bash
-    export PATH="$HOME/.opencode/bin:$PATH"
-    opencode run \
-      -m openrouter/<provider>/<model> \
-      --dangerously-skip-permissions \
-      "$(cat /workspace/prompt.md)"
-  ' 2>&1 | tee "$WORKSPACE/agent-run.log"
+# Pinned model, opencode
+docker run --rm -v "$WS":/workspace "$IMAGE" \
+  --harness opencode --token "$OPENROUTER_API_KEY" \
+  --model   openrouter/z-ai/glm-4.7
+
+# Pinned model, claude-code (Opus tier)
+docker run --rm -v "$WS":/workspace "$IMAGE" \
+  --harness claude-code --token "$ANTHROPIC_API_KEY" \
+  --model   claude-opus-4-7
+
+# Vendor default, claude-code
+docker run --rm -v "$WS":/workspace "$IMAGE" \
+  --harness claude-code --token "$ANTHROPIC_API_KEY"
 ```
 
-Notes:
-- Pipe the installer to `bash`, not `sh` — the install script uses bash-specific features (`set -o pipefail`) that fail silently under `sh`.
-- The `auth.json` mount is read-only (`:ro`) so the container cannot modify host credentials.
-- Do not pass `OPENROUTER_API_KEY` as a plain env var; the mounted auth file is the canonical credential source for opencode.
+Common OpenRouter provider prefixes for `--model`:
 
-Common OpenRouter provider prefixes:
 - Moonshot (Kimi): `openrouter/moonshotai/<model>`
 - Z.AI (GLM): `openrouter/z-ai/<model>`
 - MiniMax: `openrouter/minimax/<model>`
@@ -117,27 +143,12 @@ Common OpenRouter provider prefixes:
 
 If unsure of the provider prefix, search OpenRouter for the model before running.
 
-#### Claude Code CLI
+### Manual harnesses (Cursor, Claude Desktop, Codex Desktop)
 
-```bash
-docker run --rm \
-  -v "$WORKSPACE":/workspace \
-  -w /workspace \
-  -e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
-  --network bridge \
-  node:22-bookworm \
-  bash -c '
-    npm install -g @anthropic-ai/claude-code
-    claude --dangerously-skip-permissions \
-      -p "$(cat /workspace/prompt.md)"
-  ' 2>&1 | tee "$WORKSPACE/agent-run.log"
-```
-
-#### Manual harnesses (Cursor, Claude Desktop, Codex Desktop)
-
-Docker is not applicable. The harness runs on the host inside the operator's IDE or desktop app.
+Docker is not applicable. The harness runs on the host inside the operator's IDE or desktop app, and `runner.yaml` does not drive these runs.
 
 Minimum isolation for manual harnesses:
+
 1. Create a temp workspace outside the repo: `mktemp -d /private/tmp/10x-eval-runs/XXXXXX`
 2. Copy only allowed benchmark files there
 3. Open that directory in the IDE/app — do not open the benchmark repo itself
@@ -146,26 +157,31 @@ Minimum isolation for manual harnesses:
 
 The operator is responsible for ensuring the agent cannot see other attempts or the scorecard during a manual run.
 
-### Base image selection
+### Stack runtime selection
 
-Choose the base image that matches the benchmark stack so the agent has the right runtime available:
-
-| Stack | Base image |
-|-------|------------|
-| Go | `golang:1.23-bookworm` |
-| Node.js | `node:22-bookworm` |
-| Python | `python:3.13-bookworm` |
-| Rust | `rust:1.78-bookworm` |
-| Multi-language / unknown | `ubuntu:24.04` |
-
-Use `bookworm` (Debian) variants over Alpine when the harness installer requires `bash`, `curl`, or standard libc. Switch to Alpine only when confirmed compatible.
+The stack runtime lives in `benchmark/Dockerfile`, not in this skill. The benchmark image inherits from `ghcr.io/10xbench/harness:<tag>` (Node 22 + the three CLIs) and adds whatever extra runtime the agent needs (`golang`, `python3`, JDK, etc.). To switch stacks, edit `benchmark/Dockerfile` and rebuild — no skill change required.
 
 ### Preflight check
 
-Before running any attempt, verify Docker is available:
+Before running any attempt, verify:
 
 ```bash
+# Docker available
 docker info > /dev/null 2>&1 || { echo "Docker unavailable — cannot run isolated attempts"; exit 1; }
+
+# runner.yaml parses and names an image that is either pullable or already local
+test -r benchmark/runner.yaml || { echo "benchmark/runner.yaml missing"; exit 1; }
+IMAGE=$(yq -r '.image' benchmark/runner.yaml)
+docker pull "$IMAGE" 2>/dev/null \
+  || docker image inspect "$IMAGE" >/dev/null \
+  || { echo "image not pullable and not present locally: $IMAGE" >&2; exit 1; }
+
+# Token env var for the chosen harness is set
+case "$HARNESS" in
+  claude-code) : "${ANTHROPIC_API_KEY:?set ANTHROPIC_API_KEY before running}" ;;
+  codex)       : "${OPENAI_API_KEY:?set OPENAI_API_KEY before running}" ;;
+  opencode)    : "${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY before running}" ;;
+esac
 ```
 
 If Docker is unavailable, stop and report to the user. Do not silently fall back to running the harness directly on the host. If the user explicitly accepts the risk, document the deviation and proceed with Layer 1 (temp dir) isolation only.
@@ -188,14 +204,16 @@ Do not mount the benchmark repo or any parent directory. Mount only `$WORKSPACE`
 
 Read the benchmark inputs and confirm:
 
-- `prompt.md` exists
+- `runner.yaml` exists, parses, and names a pullable image
+- `prompt.md` exists at `runner.yaml -> prompt_file`
 - `scorecard.md` is not included in the model-visible input set
 - state mode is known:
   - `greenfield`: workspace starts empty except for allowed benchmark files
   - `brownfield`: workspace starts with a fresh copy of the baseline from `baseline-manifest.md`
-- model/harness list is known
-- attempt count is known, defaulting to 3 per model if not specified
-- Docker is available
+- model/harness list is known and each harness is in `runner.yaml -> allowed_harnesses`
+- attempt count is known, defaulting to `runner.yaml -> attempts_default` (or 3 if absent)
+- Docker is available and `$IMAGE` is either pullable or already present locally (`docker pull` then fallback to `docker image inspect`)
+- the host env var matching each chosen harness is set (see Token resolution)
 - output directories will not overwrite existing attempts without explicit user approval
 
 If `scorecard.md` is referenced inside `prompt.md`, `context.md`, or `bootstrap.md`, stop and ask the user to fix the benchmark package before running attempts.
@@ -215,15 +233,14 @@ For each `{model-id}-attempt-{n}`:
 
 For each model and attempt:
 
-- Start a Docker container from the appropriate base image
-- Install the harness inside the container at startup (ad hoc download)
+- Start a Docker container from the benchmark image resolved in preflight (the harness CLIs are already installed in the image — no per-attempt install)
 - Mount only `$WORKSPACE` as `/workspace`
-- Pass the prompt as a single string argument to the harness
+- Invoke the image's `run-attempt` entrypoint with `--harness`, `--token`, and `--model`
 - Capture stdout + stderr with `tee $WORKSPACE/agent-run.log`
 - Run one-shot with no iterative feedback
 - Do not pass scorecard or evaluator notes
 
-Run independent attempts in parallel when resource limits allow.
+Run independent attempts in parallel when resource limits allow. Pre-pull the image once at the top of the run loop so parallel attempts don't serialize on a cold pull.
 
 ### 4. Collect Artifacts
 
@@ -239,7 +256,8 @@ eval-attempts/{model-id}-attempt-{n}/
 
 2. Add `run-log.md` with:
    - model ID and display name
-   - harness and container image used
+   - harness (`claude-code` | `codex` | `opencode`) and `--model` value
+   - benchmark image tag and resolved digest (`image`, `image_digest`)
    - attempt number and run ID
    - temp workspace path
    - start and end timestamp
@@ -248,6 +266,8 @@ eval-attempts/{model-id}-attempt-{n}/
    - state mode and baseline source, if any
    - `isolation_deviations`: any cases where container isolation was not applied and why
    - `log_limitations`: note if `agent-run.log` is incomplete or missing
+
+The image digest pins all three harness CLI versions transitively. Do not separately log harness CLI versions.
 
 Do not include scorecard contents in `run-log.md`.
 
