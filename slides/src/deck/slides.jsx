@@ -3,6 +3,7 @@ import {
   Compare,
   CompareCol,
   Em,
+  FullImageSlide,
   ImageSlide,
   InsightSlide,
   ListSlide,
@@ -1139,6 +1140,21 @@ export const slides = [
       />
     ),
   },
+  ...Array.from({ length: 8 }, (_, index) => {
+    const slideNumber = index + 1;
+
+    return {
+      id: `10xdevs-demo-${slideNumber}`,
+      render: (active) => (
+        <FullImageSlide
+          active={active}
+          act="6"
+          image={assets(`10x-${slideNumber}.jpg`)}
+          alt={`10xDevs 3.0 demo ${slideNumber}`}
+        />
+      ),
+    };
+  }),
   {
     id: "demo-score-eval-attempt",
     render: (active) => (

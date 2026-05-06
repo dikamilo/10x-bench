@@ -156,6 +156,14 @@ export function ImageSlide({
   );
 }
 
+export function FullImageSlide({ active, act, image, alt }) {
+  return (
+    <SlideShell active={active} act={act} variant="slide--full-image">
+      <img className="full-image-asset" src={image} alt={alt} />
+    </SlideShell>
+  );
+}
+
 export function CodeSlide({ active, act, label, children, footer, width = "wide" }) {
   return (
     <SlideShell active={active} act={act}>

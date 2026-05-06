@@ -336,6 +336,14 @@
     @apply max-h-[75vh] max-w-[92vw];
   }
 
+  .slide--full-image {
+    @apply px-[10vw] py-[10vh];
+  }
+
+  .full-image-asset {
+    @apply h-full max-h-[80vh] w-full max-w-[80vw] rounded-lg object-contain shadow-image outline outline-1 -outline-offset-1 outline-white/10;
+  }
+
   .slide-screenshot {
     @apply max-h-[70vh] w-full rounded-lg object-contain shadow-image outline outline-1 -outline-offset-1 outline-white/10;
   }
