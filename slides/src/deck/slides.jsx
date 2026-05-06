@@ -296,6 +296,54 @@ function ScorecardV5Slide({ active }) {
   );
 }
 
+function PlanComparisonSlide({ active }) {
+  const models = [
+    { name: "Sonnet 4.6", gpt: 51.4, hitl: 67.9, delta: "+16.5", verdict: "FAIL → PASS" },
+    { name: "MiniMax M2.7", gpt: 48.8, hitl: 62.2, delta: "+13.4", verdict: "FAIL → PASS" },
+    { name: "Opus 4.7", gpt: 62.0, hitl: 68.0, delta: "+6.0", verdict: "PASS → PASS" },
+    { name: "MiniMax M2.5", gpt: 57.1, hitl: 63.5, delta: "+6.4", verdict: "PASS → PASS" },
+    { name: "Opus 4.6", gpt: 64.2, hitl: 61.6, delta: "−2.6", verdict: "PASS → PASS" },
+    { name: "GPT-4-1", gpt: 41.5, hitl: 36.5, delta: "−5.0", verdict: "FAIL → FAIL" },
+  ];
+
+  return (
+    <section className={`slide ${active ? "active" : ""}`} data-act="9">
+      <h2 className="slide-subheading mb-6">GPT plan vs HITL plan</h2>
+      <div style={{ overflowX: "auto", width: "100%" }}>
+        <table className="leaderboard-table">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>GPT plan</th>
+              <th>HITL</th>
+              <th>Bez planu</th>
+              <th>Delta</th>
+              <th>Werdykt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {models.map((m) => (
+              <tr key={m.name}>
+                <td><strong>{m.name}</strong></td>
+                <td className={m.gpt >= 55 ? "positive" : "negative"}>{m.gpt}</td>
+                <td className={m.hitl >= 55 ? "positive" : "negative"}>{m.hitl}</td>
+                <td className="dim">—</td>
+                <td className={m.delta.startsWith("+") ? "positive" : "warm"}>{m.delta}</td>
+                <td className={m.verdict.includes("FAIL → PASS") ? "accent" : m.verdict.includes("FAIL → FAIL") ? "negative" : "dim"}>
+                  {m.verdict}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="footnote mt-4">
+        Pass threshold: 55/100. Kolumna &quot;Bez planu&quot; — wkrótce.
+      </p>
+    </section>
+  );
+}
+
 export const slides = [
   {
     id: "title",
@@ -1289,6 +1337,84 @@ export const slides = [
         tone="gradient"
         note={<>Opus 4.7: $5.67. <Em tone="warm">189× drożej</Em>, gorszy wynik.</>}
       />
+    ),
+  },
+  {
+    id: "plan-quality-intro",
+    render: (active) => (
+      <SectionSlide
+        active={active}
+        act="9"
+        title={
+          <>
+            Jakość planu
+            <br />
+            <Em gradient>zmienia wynik</Em>
+          </>
+        }
+      />
+    ),
+  },
+  {
+    id: "experiment-design",
+    render: (active) => (
+      <ListSlide
+        active={active}
+        act="9"
+        label="Eksperyment"
+        title="3 warunki, te same modele"
+        items={[
+          <>
+            <Em tone="accent2">GPT-5.4 plan</Em> — wygenerowany automatycznie przez AI
+          </>,
+          <>
+            <Em tone="positive">HITL plan</Em> — Opus 4.6 + ręczna korekta człowieka
+          </>,
+          <>
+            <Em tone="warm">Bez planu</Em> — model dostaje tylko task.md (wkrótce)
+          </>,
+        ]}
+        footer="Czy lepszy plan = lepszy kod? A może niektóre modele radzą sobie same?"
+      />
+    ),
+  },
+  { id: "plan-comparison", render: (active) => <PlanComparisonSlide active={active} /> },
+  {
+    id: "insight-sonnet-swing",
+    render: (active) => (
+      <InsightSlide active={active} act="9" number="03" tone="accent" tag="Sonnet 4.6" title="+16.5 punktów" centered>
+        <Compare vs centered>
+          <CompareCol title="GPT plan">
+            <Stat value="51.4" label="FAIL" tone="negative" />
+          </CompareCol>
+          <CompareCol title="HITL plan">
+            <Stat value="67.9" label="PASS" tone="positive" />
+          </CompareCol>
+        </Compare>
+        <span className="mt-8 block">
+          Ten sam model. Ta sama ewaluacja. <Em tone="accent">Tylko plan się zmienił.</Em>
+        </span>
+      </InsightSlide>
+    ),
+  },
+  {
+    id: "insight-plan-types",
+    render: (active) => (
+      <InsightSlide active={active} act="9" number="04" tone="accent2" tag="Zależność od planu" title="Dwa typy modeli" centered>
+        <Compare centered>
+          <CompareCol title="Plan followers">
+            <p><Em tone="accent">Sonnet</Em>, <Em tone="accent">MiniMax</Em></p>
+            <p className="mt-2">Plan robi ogromną różnicę.</p>
+          </CompareCol>
+          <CompareCol title="Self-directed">
+            <p><Em tone="accent2">Opus</Em>, <Em tone="accent2">GPT-4-1</Em></p>
+            <p className="mt-2">Radzą sobie (lub nie) niezależnie od planu.</p>
+          </CompareCol>
+        </Compare>
+        <span className="mt-8 block">
+          Warto wiedzieć, z jakim typem modelu pracujesz.
+        </span>
+      </InsightSlide>
     ),
   },
 ];
