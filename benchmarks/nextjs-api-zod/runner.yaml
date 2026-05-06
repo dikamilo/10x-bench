@@ -5,8 +5,8 @@ display_name: Next.js API Routes with Zod
 # State contract
 state_mode: brownfield
 
-# Image — built from benchmarks/nextjs-api-zod/Dockerfile (you must author it)
-image: ghcr.io/10xbench/nextjs-api-zod:2026-05-06
+# Execution path: lite (no Docker). Run with run-model-attempts-lite.
+# No `image` field — Docker runner is intentionally not supported for this benchmark.
 
 # Default attempts per model
 attempts_default: 3
