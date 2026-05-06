@@ -181,21 +181,23 @@ function IsolationSlide({ active }) {
 
 function LeaderboardSlide({ active }) {
   const models = [
-    { rank: 1, name: "Gemini 3.1 Pro", tier: "premium", gpt: 72.4, hitl: "—", cost: "$2.07" },
-    { rank: 2, name: "Qwen 3.6 Plus", tier: "budget", gpt: 70.0, hitl: "—", cost: "$1.15" },
-    { rank: 3, name: "MiniMax M2.7", tier: "budget", gpt: 67.7, hitl: "62.2", cost: "$0.06" },
-    { rank: 4, name: "GLM 5.1", tier: "budget", gpt: 65.9, hitl: "—", cost: "$0.62" },
-    { rank: 5, name: "Opus 4.6", tier: "premium", gpt: 64.2, hitl: "61.6", cost: "$2.70" },
-    { rank: 6, name: "DeepSeek V3.2", tier: "budget", gpt: 63.6, hitl: "—", cost: "$1.37" },
-    { rank: 7, name: "GLM 5", tier: "budget", gpt: 62.7, hitl: "—", cost: "$0.50" },
-    { rank: 8, name: "Opus 4.7", tier: "premium", gpt: 62.0, hitl: "68.0", cost: "$5.67" },
+    { rank: 1,  name: "Qwen 3.6 Plus",    tier: "budget",  score: 83.5, plan: "HITL",    cost: "$3.42" },
+    { rank: 2,  name: "DeepSeek V4 Flash", tier: "budget",  score: 82.5, plan: "GPT-5.4", cost: "$0.02" },
+    { rank: 3,  name: "Gemini 3.1 Pro",    tier: "premium", score: 81.0, plan: "GPT-5.4", cost: "$2.07" },
+    { rank: 4,  name: "MiMo v2 Pro",       tier: "mid",     score: 79.0, plan: "HITL",    cost: "$0.29" },
+    { rank: 5,  name: "Sonnet 4.6",        tier: "mid",     score: 76.9, plan: "HITL",    cost: "$2.95" },
+    { rank: 6,  name: "Opus 4.7",          tier: "premium", score: 76.8, plan: "HITL",    cost: "$8.69" },
+    { rank: 7,  name: "MiniMax M2.7",      tier: "budget",  score: 76.7, plan: "Legacy",  cost: "$0.06" },
+    { rank: 8,  name: "Kimi K2.6",         tier: "mid",     score: 76.3, plan: "HITL",    cost: "$1.77" },
+    { rank: 9,  name: "MiniMax M2.5",      tier: "budget",  score: 76.3, plan: "HITL",    cost: "$0.11" },
+    { rank: 10, name: "DeepSeek V4 Pro",   tier: "budget",  score: 74.8, plan: "HITL",    cost: "$0.47" },
   ];
 
   const tierColors = { premium: "accent", budget: "positive", mid: "accent2" };
 
   return (
     <section className={`slide ${active ? "active" : ""}`} data-act="8">
-      <h2 className="slide-subheading mb-6">Top 8 — GPT-plan (best-of-n)</h2>
+      <h2 className="slide-subheading mb-6">Top 10 — Master leaderboard (v6)</h2>
       <div style={{ overflowX: "auto", width: "100%" }}>
         <table className="leaderboard-table">
           <thead>
@@ -203,9 +205,8 @@ function LeaderboardSlide({ active }) {
               <th>#</th>
               <th>Model</th>
               <th>Tier</th>
-              <th>GPT plan</th>
-              <th>HITL</th>
-              <th>Bez planu</th>
+              <th>Wynik</th>
+              <th>Najlepszy plan</th>
               <th>Koszt</th>
             </tr>
           </thead>
@@ -215,9 +216,8 @@ function LeaderboardSlide({ active }) {
                 <td className="accent2">{m.rank}</td>
                 <td><strong>{m.name}</strong></td>
                 <td><span className={tierColors[m.tier] || "dim"}>{m.tier}</span></td>
-                <td className={m.gpt >= 55 ? "positive" : "negative"}>{m.gpt}</td>
-                <td className={m.hitl !== "—" && parseFloat(m.hitl) >= 55 ? "positive" : "dim"}>{m.hitl}</td>
-                <td className="dim">—</td>
+                <td className={m.score >= 55 ? "positive" : "negative"}>{m.score}</td>
+                <td>{m.plan}</td>
                 <td>{m.cost}</td>
               </tr>
             ))}
@@ -225,7 +225,7 @@ function LeaderboardSlide({ active }) {
         </table>
       </div>
       <p className="footnote mt-4">
-        6 z 8 najlepszych to <Em tone="positive">budget-tier</Em>. Pass threshold: 55/100.
+        4 z 5 najlepszych to <Em tone="positive">budget-tier</Em>. 20/22 modeli zdaje (≥55). Pass threshold: 55/100.
       </p>
     </section>
   );
@@ -234,14 +234,14 @@ function LeaderboardSlide({ active }) {
 function ScorecardV5Slide({ active }) {
   const autoStages = [
     { name: "Build", points: 20 },
-    { name: "Tests", points: 10 },
+    { name: "Tests", points: 5 },
     { name: "Lint", points: 5 },
     { name: "Security", points: 5 },
     { name: "Runtime (Playwright)", points: 15 },
   ];
 
   const judgeStages = [
-    { name: "Correctness", points: 15 },
+    { name: "Correctness", points: 20 },
     { name: "Quality", points: 10 },
     { name: "Testability", points: 5 },
     { name: "Efficiency", points: 5 },
@@ -249,7 +249,7 @@ function ScorecardV5Slide({ active }) {
 
   return (
     <section className={`slide ${active ? "active" : ""}`} data-act="7">
-      <h2 className="slide-subheading mb-8">Scorecard v5 — 9 wymiarów</h2>
+      <h2 className="slide-subheading mb-8">Scorecard v6 — 9 wymiarów</h2>
       <div className="scorecard">
         <div className="scorecard-col">
           <div className="scorecard-header scorecard-header--auto">
@@ -1182,7 +1182,7 @@ export const slides = [
             Open-source benchmark
           </>
         }
-        label="19 modeli · 9 wymiarów · automatyczny grading"
+        label="22 modele · 9 wymiarów · automatyczny grading"
       />
     ),
   },
@@ -1242,7 +1242,7 @@ export const slides = [
         label="Runtime: OpenCode"
         footer={
           <>
-            Jeden interfejs. <Em>19 modeli.</Em> Izolowane sesje. Zero interakcji z człowiekiem.
+            Jeden interfejs. <Em>22 modele.</Em> Izolowane sesje. Zero interakcji z człowiekiem.
           </>
         }
       >
@@ -1295,15 +1295,15 @@ export const slides = [
     render: (active) => (
       <InsightSlide active={active} act="8" number="01" tone="positive" tag="Chińskie modele" title="Budget dominuje" centered>
         <Compare vs centered>
-          <CompareCol title="GLM 5.1 (budget)">
-            <Stat value="65.9" label="$0.62 za task" tone="positive" />
+          <CompareCol title="V4 Flash (budget)">
+            <Stat value="82.5" label="$0.02 za task" tone="positive" />
           </CompareCol>
-          <CompareCol title="Opus 4.7 (premium)">
-            <Stat value="62.0" label="$5.67 za task" tone="warm" />
+          <CompareCol title="Qwen 3.6 Plus (#1)">
+            <Stat value="83.5" label="$3.42 za task" tone="accent" />
           </CompareCol>
         </Compare>
         <span className="mt-8 block">
-          6 z 8 najlepszych to <Em tone="positive">budget-tier</Em>. <Em tone="warm">9× taniej</Em>, lepszy wynik.
+          4 z 5 najlepszych to <Em tone="positive">budget-tier</Em>. <Em tone="warm">180× taniej</Em>, 1 punkt różnicy.
         </span>
       </InsightSlide>
     ),
@@ -1314,14 +1314,32 @@ export const slides = [
       <InsightSlide active={active} act="8" number="02" tone="accent" tag="Runtime" title="Playwright decyduje" centered>
         <Compare vs centered>
           <CompareCol title="Runtime > 0">
-            <Stat value="13/13" label="PASS" tone="positive" />
+            <Stat value="17/17" label="PASS" tone="positive" />
           </CompareCol>
           <CompareCol title="Runtime = 0">
-            <Stat value="0/6" label="PASS" tone="negative" />
+            <Stat value="2/5" label="FAIL" tone="negative" />
           </CompareCol>
         </Compare>
         <span className="mt-8 block">
-          Kto zdaje <Em>e2e testy Playwright</Em>, ten przechodzi cały benchmark.
+          Kto zdaje <Em>e2e testy Playwright</Em>, ten przechodzi cały benchmark. Bez wyjątku.
+        </span>
+      </InsightSlide>
+    ),
+  },
+  {
+    id: "insight-tests",
+    render: (active) => (
+      <InsightSlide active={active} act="8" number="03" tone="positive" tag="Tests" title="74% zdało testy" centered>
+        <Compare vs centered>
+          <CompareCol title="Scorecard v5">
+            <Stat value="0%" label="grep --color bug" tone="negative" />
+          </CompareCol>
+          <CompareCol title="Scorecard v6">
+            <Stat value="74%" label="49 z 66 runów" tone="positive" />
+          </CompareCol>
+        </Compare>
+        <span className="mt-8 block">
+          v5 twierdził, że żaden model nie pisze testów. Okazało się, że <Em tone="positive">piszą i zdają</Em> — bug w harnessie to ukrywał.
         </span>
       </InsightSlide>
     ),
@@ -1332,10 +1350,10 @@ export const slides = [
       <NumberSlide
         active={active}
         act="8"
-        value="$0.03"
-        label="Step 3.5 Flash — PASS za 3 centy"
+        value="$0.02"
+        label="DeepSeek V4 Flash — #2 w rankingu za 2 centy"
         tone="gradient"
-        note={<>Opus 4.7: $5.67. <Em tone="warm">189× drożej</Em>, gorszy wynik.</>}
+        note={<>Qwen 3.6 Plus (#1): $3.42. <Em tone="warm">180× drożej</Em>, o 1 punkt lepszy.</>}
       />
     ),
   },
