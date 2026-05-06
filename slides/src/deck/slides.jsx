@@ -197,7 +197,7 @@ function LeaderboardSlide({ active }) {
 
   return (
     <section className={`slide ${active ? "active" : ""}`} data-act="8">
-      <h2 className="slide-subheading mb-6">Top 10 — Master leaderboard (v6)</h2>
+      <h2 className="slide-subheading mb-6">Top 10 modeli</h2>
       <div style={{ overflowX: "auto", width: "100%" }}>
         <table className="leaderboard-table">
           <thead>
@@ -249,7 +249,7 @@ function ScorecardV5Slide({ active }) {
 
   return (
     <section className={`slide ${active ? "active" : ""}`} data-act="7">
-      <h2 className="slide-subheading mb-8">Scorecard v6 — 9 wymiarów</h2>
+      <h2 className="slide-subheading mb-8">Scorecard — 9 wymiarów</h2>
       <div className="scorecard">
         <div className="scorecard-col">
           <div className="scorecard-header scorecard-header--auto">
@@ -334,6 +334,7 @@ function PlanComparisonSlide({ active }) {
   ];
 
   const scoreClass = (v) => v >= 55 ? "positive" : "negative";
+  const archetypeTone = { "Self-sufficient": "positive", "Follower": "accent", "Explorer": "accent2", "Versatile": "warm" };
 
   return (
     <section className={`slide ${active ? "active" : ""}`} data-act="9">
@@ -354,7 +355,7 @@ function PlanComparisonSlide({ active }) {
               <>
                 <tr key={arch.name} className="archetype-header">
                   <td colSpan={5}>
-                    <strong>{arch.name}</strong> <span className="dim">— {arch.description}</span>
+                    <Em tone={archetypeTone[arch.name]}>{arch.name}</Em> <span className="dim">— {arch.description}</span>
                   </td>
                 </tr>
                 {arch.models.map((m) => {
@@ -1315,19 +1316,6 @@ export const slides = [
   },
   { id: "leaderboard", render: (active) => <LeaderboardSlide active={active} /> },
   {
-    id: "pareto",
-    render: (active) => (
-      <ImageSlide
-        active={active}
-        act="8"
-        title="Pareto frontier — koszt vs jakość"
-        image={assets("pareto-impl.png")}
-        alt="Pareto frontier — koszt vs jakość implementacji"
-        subtitle={<>Modele na krzywej to <Em tone="positive">najlepsza wartość</Em> w swoim przedziale cenowym.</>}
-      />
-    ),
-  },
-  {
     id: "insight-chinese",
     render: (active) => (
       <InsightSlide active={active} act="8" number="01" tone="positive" tag="Chińskie modele" title="Budget dominuje" centered>
@@ -1346,42 +1334,6 @@ export const slides = [
     ),
   },
   {
-    id: "insight-runtime",
-    render: (active) => (
-      <InsightSlide active={active} act="8" number="02" tone="accent" tag="Runtime" title="Playwright decyduje" centered>
-        <Compare vs centered>
-          <CompareCol title="Runtime > 0">
-            <Stat value="17/17" label="PASS" tone="positive" />
-          </CompareCol>
-          <CompareCol title="Runtime = 0">
-            <Stat value="2/5" label="FAIL" tone="negative" />
-          </CompareCol>
-        </Compare>
-        <span className="mt-8 block">
-          Kto zdaje <Em>e2e testy Playwright</Em>, ten przechodzi cały benchmark. Bez wyjątku.
-        </span>
-      </InsightSlide>
-    ),
-  },
-  {
-    id: "insight-tests",
-    render: (active) => (
-      <InsightSlide active={active} act="8" number="03" tone="positive" tag="Tests" title="74% zdało testy" centered>
-        <Compare vs centered>
-          <CompareCol title="Scorecard v5">
-            <Stat value="0%" label="grep --color bug" tone="negative" />
-          </CompareCol>
-          <CompareCol title="Scorecard v6">
-            <Stat value="74%" label="49 z 66 runów" tone="positive" />
-          </CompareCol>
-        </Compare>
-        <span className="mt-8 block">
-          v5 twierdził, że żaden model nie pisze testów. Okazało się, że <Em tone="positive">piszą i zdają</Em> — bug w harnessie to ukrywał.
-        </span>
-      </InsightSlide>
-    ),
-  },
-  {
     id: "insight-003",
     render: (active) => (
       <NumberSlide
@@ -1390,7 +1342,7 @@ export const slides = [
         value="$0.02"
         label="DeepSeek V4 Flash — #2 w rankingu za 2 centy"
         tone="gradient"
-        note={<>Qwen 3.6 Plus (#1): $3.42. <Em tone="warm">180× drożej</Em>, o 1 punkt lepszy.</>}
+        note={<>Qwen 3.6 Plus (#1): $3.42. <Em tone="warm">180× drożej</Em>... o 1 punkt lepszy.</>}
       />
     ),
   },
@@ -1435,53 +1387,22 @@ export const slides = [
   },
   { id: "plan-comparison", render: (active) => <PlanComparisonSlide active={active} /> },
   {
-    id: "insight-sonnet-swing",
-    render: (active) => (
-      <InsightSlide active={active} act="9" number="03" tone="accent" tag="Sonnet vs Opus" title="Kontrastowe archetypy" centered>
-        <Compare centered>
-          <CompareCol title="Sonnet 4.6 (Follower)">
-            <Stat value="76.6" label="bez planu" tone="positive" />
-            <Stat value="59.1" label="GPT-5.4" tone="positive" />
-            <Stat value="76.9" label="HITL" tone="positive" />
-          </CompareCol>
-          <CompareCol title="Opus 4.7 (Follower)">
-            <Stat value="47.3" label="bez planu" tone="negative" />
-            <Stat value="70.1" label="GPT-5.4" tone="positive" />
-            <Stat value="76.8" label="HITL" tone="positive" />
-          </CompareCol>
-        </Compare>
-        <span className="mt-8 block">
-          Oba Followers, ale Sonnet radzi sobie solo. Opus bez planu — <Em tone="negative">FAIL</Em>.
-        </span>
-      </InsightSlide>
-    ),
-  },
-  {
     id: "insight-plan-types",
     render: (active) => (
       <InsightSlide active={active} act="9" number="04" tone="accent2" tag="Zależność od planu" title="Cztery archetypy" centered>
-        <Compare centered>
-          <CompareCol title="Self-sufficient">
-            <p><Em tone="positive">V4 Flash</Em>, <Em tone="positive">Step Flash</Em></p>
-            <p className="mt-2">Zdaje wszędzie</p>
-          </CompareCol>
-          <CompareCol title="Follower">
-            <p><Em tone="accent">Sonnet</Em>, <Em tone="accent">Opus</Em>, <Em tone="accent">Hy3</Em></p>
-            <p className="mt-2">Najlepszy z HITL</p>
-          </CompareCol>
-        </Compare>
-        <Compare centered>
-          <CompareCol title="Explorer">
-            <p><Em tone="accent2">Gemini 3.1 Pro</Em>, <Em tone="accent2">V3.2</Em>, <Em tone="accent2">Qwen 27B</Em></p>
-            <p className="mt-2">HITL przeszkadza</p>
-          </CompareCol>
-          <CompareCol title="Versatile">
-            <p><Em tone="warm">MiniMax M2.7</Em></p>
-            <p className="mt-2">Stabilny</p>
-          </CompareCol>
-        </Compare>
+        <table className="leaderboard-table">
+          <thead>
+            <tr><th>Archetyp</th><th>Cecha</th><th>Najlepszy plan</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><Em tone="positive">Self-sufficient</Em></td><td>Zdaje wszędzie</td><td>dowolny</td></tr>
+            <tr><td><Em tone="accent">Follower</Em></td><td>Potrzebuje struktury</td><td>HITL</td></tr>
+            <tr><td><Em tone="accent2">Explorer</Em></td><td>HITL mu przeszkadza</td><td>brak</td></tr>
+            <tr><td><Em tone="warm">Versatile</Em></td><td>Stabilny niezależnie</td><td>dowolny</td></tr>
+          </tbody>
+        </table>
         <span className="mt-8 block">
-          Archetyp modelu mówi ci, jak z nim pracować.
+          Archetyp mówi ci więcej niż tier czy cena.
         </span>
       </InsightSlide>
     ),
@@ -1511,35 +1432,28 @@ export const slides = [
         value="25×"
         label="Anthropic Max 20× — $200/mies. ≈ $5 000 API"
         tone="gradient"
-        note={<>Pro ($20) → Max 5× ($100) → Max 20× ($200). Im wyżej, tym <Em tone="positive">lepszy mnożnik</Em>.</>}
+        note={<>Pro ($20) → Max 5× ($100) → Max 20× ($200). Im wyżej, tym <Em tone="positive">lepszy mnożnik</Em> — warto liczyć.</>}
       />
     ),
   },
   {
     id: "chinese-pricing",
     render: (active) => (
-      <InsightSlide active={active} act="10" tone="positive" tag="Koszt za task" title="Pełny gradient cenowy" centered>
-        <Compare centered>
-          <CompareCol title="Opus 4.7">
-            <Stat value="$8.69" label="76.8 pkt · premium" tone="warm" />
-          </CompareCol>
-          <CompareCol title="GLM 5.1">
-            <Stat value="$0.62" label="74.0 pkt · budget" tone="positive" />
-          </CompareCol>
-          <CompareCol title="V4 Pro">
-            <Stat value="$0.47" label="74.8 pkt · budget" tone="positive" />
-          </CompareCol>
-        </Compare>
-        <Compare centered>
-          <CompareCol title="Step Flash">
-            <Stat value="$0.06" label="71.8 pkt · budget" tone="positive" />
-          </CompareCol>
-          <CompareCol title="V4 Flash">
-            <Stat value="$0.02" label="82.5 pkt · #2 overall" tone="positive" />
-          </CompareCol>
-        </Compare>
+      <InsightSlide active={active} act="10" tone="positive" tag="Koszt za task" title="Od $8.69 do $0.02" centered>
+        <table className="leaderboard-table">
+          <thead>
+            <tr><th>Model</th><th>Koszt</th><th>Wynik</th><th>Tier</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Opus 4.7</strong></td><td className="warm">$8.69</td><td>76.8</td><td>premium</td></tr>
+            <tr><td><strong>GLM 5.1</strong></td><td className="positive">$0.62</td><td>74.0</td><td>budget</td></tr>
+            <tr><td><strong>V4 Pro</strong></td><td className="positive">$0.47</td><td>74.8</td><td>budget</td></tr>
+            <tr><td><strong>Step Flash</strong></td><td className="positive">$0.06</td><td>71.8</td><td>budget</td></tr>
+            <tr><td><strong>V4 Flash</strong></td><td className="positive">$0.02</td><td>82.5</td><td>budget</td></tr>
+          </tbody>
+        </table>
         <span className="mt-8 block">
-          Od $8.69 do $0.02 za task. Za <Em tone="positive">$20 miesięcznie</Em> — 1 000 tasków V4 Flash.
+          430× rozpiętość cenowa. Za <Em tone="positive">$20 miesięcznie</Em> — 1 000 tasków V4 Flash.
         </span>
       </InsightSlide>
     ),
@@ -1549,17 +1463,17 @@ export const slides = [
     render: (active) => (
       <InsightSlide active={active} act="10" tone="accent2" tag="Lokalnie" title="Prywatność, suwerenność, offline" centered>
         <Compare vs centered>
-          <CompareCol title="Consumer (dowolny GPU)">
-            <Stat value="63.2" label="Qwen 3.6 27B · PASS" tone="positive" />
-            <p className="mt-2">16-32 GB VRAM · od ~$500</p>
+          <CompareCol title="RTX 4090 (~$1 600)">
+            <Stat value="63.2" label="Qwen 3.6 27B · 55-60 tps" tone="positive" />
+            <p className="mt-2">24 GB VRAM · Q6_K · PASS</p>
           </CompareCol>
-          <CompareCol title="Prosumer (Mac Studio)">
-            <Stat value="82.5" label="V4 Flash · #2 overall" tone="positive" />
-            <p className="mt-2">M4 Ultra 192 GB · ~$5 500</p>
+          <CompareCol title="DGX Spark / Mac Studio (~$5K)">
+            <Stat value="82.5" label="V4 Flash · 10-20 tps" tone="accent" />
+            <p className="mt-2">128 GB unified · Q4 · #2 overall</p>
           </CompareCol>
         </Compare>
         <span className="mt-8 block">
-          19.3 pkt różnicy między tierami. API prawie zawsze wygrywa kosztowo — lokalnie to kwestia <Em tone="accent2">kontroli</Em>, nie oszczędności.
+          Szybko (50+ tps) albo dobrze (82.5 pkt) — na razie nie oba. API wygrywa kosztowo — lokalnie to kwestia <Em tone="accent2">kontroli nad danymi</Em>.
         </span>
       </InsightSlide>
     ),
