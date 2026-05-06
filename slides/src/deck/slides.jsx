@@ -179,6 +179,58 @@ function IsolationSlide({ active }) {
   );
 }
 
+function LeaderboardSlide({ active }) {
+  const models = [
+    { rank: 1, name: "Gemini 3.1 Pro", tier: "premium", gpt: 72.4, hitl: "—", cost: "$2.07" },
+    { rank: 2, name: "Qwen 3.6 Plus", tier: "budget", gpt: 70.0, hitl: "—", cost: "$1.15" },
+    { rank: 3, name: "MiniMax M2.7", tier: "budget", gpt: 67.7, hitl: "62.2", cost: "$0.06" },
+    { rank: 4, name: "GLM 5.1", tier: "budget", gpt: 65.9, hitl: "—", cost: "$0.62" },
+    { rank: 5, name: "Opus 4.6", tier: "premium", gpt: 64.2, hitl: "61.6", cost: "$2.70" },
+    { rank: 6, name: "DeepSeek V3.2", tier: "budget", gpt: 63.6, hitl: "—", cost: "$1.37" },
+    { rank: 7, name: "GLM 5", tier: "budget", gpt: 62.7, hitl: "—", cost: "$0.50" },
+    { rank: 8, name: "Opus 4.7", tier: "premium", gpt: 62.0, hitl: "68.0", cost: "$5.67" },
+  ];
+
+  const tierColors = { premium: "accent", budget: "positive", mid: "accent2" };
+
+  return (
+    <section className={`slide ${active ? "active" : ""}`} data-act="8">
+      <h2 className="slide-subheading mb-6">Top 8 — GPT-plan (best-of-n)</h2>
+      <div style={{ overflowX: "auto", width: "100%" }}>
+        <table className="leaderboard-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Model</th>
+              <th>Tier</th>
+              <th>GPT plan</th>
+              <th>HITL</th>
+              <th>Bez planu</th>
+              <th>Koszt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {models.map((m) => (
+              <tr key={m.rank}>
+                <td className="accent2">{m.rank}</td>
+                <td><strong>{m.name}</strong></td>
+                <td><span className={tierColors[m.tier] || "dim"}>{m.tier}</span></td>
+                <td className={m.gpt >= 55 ? "positive" : "negative"}>{m.gpt}</td>
+                <td className={m.hitl !== "—" && parseFloat(m.hitl) >= 55 ? "positive" : "dim"}>{m.hitl}</td>
+                <td className="dim">—</td>
+                <td>{m.cost}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="footnote mt-4">
+        6 z 8 najlepszych to <Em tone="positive">budget-tier</Em>. Pass threshold: 55/100.
+      </p>
+    </section>
+  );
+}
+
 function ScorecardV5Slide({ active }) {
   const autoStages = [
     { name: "Build", points: 20 },
@@ -1158,6 +1210,85 @@ export const slides = [
         <br />
         <span className="cm"># OPENCODE_DATA per run → brak wycieku kontekstu</span>
       </CodeSlide>
+    ),
+  },
+  {
+    id: "results-intro",
+    render: (active) => (
+      <SectionSlide
+        active={active}
+        act="8"
+        title={
+          <>
+            Co mówią
+            <br />
+            <Em gradient>dane</Em>?
+          </>
+        }
+      />
+    ),
+  },
+  { id: "leaderboard", render: (active) => <LeaderboardSlide active={active} /> },
+  {
+    id: "pareto",
+    render: (active) => (
+      <ImageSlide
+        active={active}
+        act="8"
+        title="Pareto frontier — koszt vs jakość"
+        image={assets("pareto-impl.png")}
+        alt="Pareto frontier — koszt vs jakość implementacji"
+        subtitle={<>Modele na krzywej to <Em tone="positive">najlepsza wartość</Em> w swoim przedziale cenowym.</>}
+      />
+    ),
+  },
+  {
+    id: "insight-chinese",
+    render: (active) => (
+      <InsightSlide active={active} act="8" number="01" tone="positive" tag="Chińskie modele" title="Budget dominuje" centered>
+        <Compare vs centered>
+          <CompareCol title="GLM 5.1 (budget)">
+            <Stat value="65.9" label="$0.62 za task" tone="positive" />
+          </CompareCol>
+          <CompareCol title="Opus 4.7 (premium)">
+            <Stat value="62.0" label="$5.67 za task" tone="warm" />
+          </CompareCol>
+        </Compare>
+        <span className="mt-8 block">
+          6 z 8 najlepszych to <Em tone="positive">budget-tier</Em>. <Em tone="warm">9× taniej</Em>, lepszy wynik.
+        </span>
+      </InsightSlide>
+    ),
+  },
+  {
+    id: "insight-runtime",
+    render: (active) => (
+      <InsightSlide active={active} act="8" number="02" tone="accent" tag="Runtime" title="Playwright decyduje" centered>
+        <Compare vs centered>
+          <CompareCol title="Runtime > 0">
+            <Stat value="13/13" label="PASS" tone="positive" />
+          </CompareCol>
+          <CompareCol title="Runtime = 0">
+            <Stat value="0/6" label="PASS" tone="negative" />
+          </CompareCol>
+        </Compare>
+        <span className="mt-8 block">
+          Kto zdaje <Em>e2e testy Playwright</Em>, ten przechodzi cały benchmark.
+        </span>
+      </InsightSlide>
+    ),
+  },
+  {
+    id: "insight-003",
+    render: (active) => (
+      <NumberSlide
+        active={active}
+        act="8"
+        value="$0.03"
+        label="Step 3.5 Flash — PASS za 3 centy"
+        tone="gradient"
+        note={<>Opus 4.7: $5.67. <Em tone="warm">189× drożej</Em>, gorszy wynik.</>}
+      />
     ),
   },
 ];
