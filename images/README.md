@@ -4,7 +4,9 @@ Two-layer Docker scheme used by the `run-model-attempts` skill.
 
 ```
 ghcr.io/10xbench/harness:<tag>           # stack-agnostic, built once
-  └─ all three coding-agent CLIs
+  └─ @anthropic-ai/claude-code (npm)
+  └─ @openai/codex            (npm)
+  └─ opencode-ai              (npm)
   └─ /usr/local/bin/run-attempt          # orchestrator entrypoint
 
 ghcr.io/10xbench/<benchmark>:<tag>       # per benchmark

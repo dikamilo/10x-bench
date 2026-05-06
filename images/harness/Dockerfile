@@ -16,16 +16,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       bash curl ca-certificates git jq \
  && rm -rf /var/lib/apt/lists/*
 
-ARG CLAUDE_CODE_VERSION=2.1.89
-ARG CODEX_VERSION=0.7.1
-ARG OPENCODE_VERSION=0.5.2
+ARG CLAUDE_CODE_VERSION=2.1.131
+ARG CODEX_VERSION=0.128.0
+ARG OPENCODE_VERSION=1.14.39
 
 RUN npm install -g \
       "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
-      "@openai/codex-cli@${CODEX_VERSION}"
-
-RUN curl -fsSL https://opencode.ai/install | VERSION="${OPENCODE_VERSION}" bash \
- && ln -s /root/.opencode/bin/opencode /usr/local/bin/opencode
+      "@openai/codex@${CODEX_VERSION}" \
+      "opencode-ai@${OPENCODE_VERSION}"
 
 ENV DISABLE_AUTOUPDATER=1
 
