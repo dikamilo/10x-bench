@@ -1,0 +1,31 @@
+# Identity
+name: nextjs-api-zod
+display_name: Next.js API Routes with Zod
+
+# State contract
+state_mode: brownfield
+
+# Image — built from benchmarks/nextjs-api-zod/Dockerfile (you must author it)
+image: ghcr.io/10xbench/nextjs-api-zod:2026-05-06
+
+# Default attempts per model
+attempts_default: 3
+
+# Prompt path, relative to this runner.yaml
+prompt_file: prompt.md
+
+# Files copied into the container workspace (relative to this runner.yaml).
+# scorecard.md, baseline-manifest.md and runner.yaml are intentionally absent.
+model_visible_files:
+  - prompt.md
+  - context.md
+  - baseline/
+
+# Harnesses allowed for this benchmark
+allowed_harnesses:
+  - opencode
+
+# Per-harness model defaults
+defaults:
+  opencode:
+    model: openrouter/z-ai/glm-4.6
