@@ -100,7 +100,37 @@ The skill reads the host environment for the harness-appropriate key and passes 
 | `codex` | `OPENAI_API_KEY` | promoted to `OPENAI_API_KEY` |
 | `opencode` | `OPENROUTER_API_KEY` | written to `~/.local/share/opencode/auth.json` |
 
-`--model` is required for `opencode` (the OpenRouter token is orthogonal to the model id) and ignored for the other harnesses. If `--model` is not supplied on the call, fall back to `runner.yaml -> defaults.<harness>.model`.
+### Model resolution
+
+For each `(harness, attempt)` the skill resolves `--model` in this order:
+
+1. **Explicit on the call.** When the user says "run kimi k2.5 via opencode", the skill passes `--model openrouter/moonshotai/kimi-k2` to `run-attempt`.
+2. **`runner.yaml -> defaults.<harness>.model`.** Used when no model is given on the call. Useful for demos so the operator doesn't have to retype a long OpenRouter id.
+3. **CLI vendor default.** When `--model` is not provided at all, `claude-code` and `codex` use whatever their CLI defaults to. **`opencode` errors** here — there is no vendor default.
+
+Implications:
+
+- `opencode` must have a model resolved by step 1 or 2, otherwise `run-attempt` exits with code 4.
+- For `claude-code` / `codex`, omitting `--model` is fine but means the run is not pinned to a specific model tier — `run-log.md` should record this as `model: <vendor-default>`.
+- The output directory name `${MODEL_ID}-attempt-${N}` should reflect the *resolved* model, not just the harness, so multiple `claude-code` runs with different `--model` values don't collide.
+
+Example invocation patterns:
+
+```bash
+# Pinned model, opencode
+docker run --rm -v "$WS":/workspace "$IMAGE" \
+  --harness opencode --token "$OPENROUTER_API_KEY" \
+  --model   openrouter/z-ai/glm-4.7
+
+# Pinned model, claude-code (Opus tier)
+docker run --rm -v "$WS":/workspace "$IMAGE" \
+  --harness claude-code --token "$ANTHROPIC_API_KEY" \
+  --model   claude-opus-4-7
+
+# Vendor default, claude-code
+docker run --rm -v "$WS":/workspace "$IMAGE" \
+  --harness claude-code --token "$ANTHROPIC_API_KEY"
+```
 
 Common OpenRouter provider prefixes for `--model`:
 

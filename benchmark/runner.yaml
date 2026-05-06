@@ -14,9 +14,19 @@ allowed_harnesses:
   - claude-code
   - codex
 
-# Optional per-harness defaults the skill can fall back on when --model isn't
-# specified explicitly. Required for opencode (model is orthogonal to the
-# OpenRouter token); ignored for claude-code and codex.
+# Optional per-harness defaults the skill falls back on when no --model is
+# given on the call. Resolution order:
+#   explicit on call  >  defaults.<harness>.model  >  CLI's vendor default
+#
+# - opencode    REQUIRED somewhere (no vendor default; OpenRouter needs a
+#               fully-qualified model id).
+# - claude-code OPTIONAL — omit to use the CLI default; set to pin a tier
+#               like claude-opus-4-7 vs claude-sonnet-4-6.
+# - codex       OPTIONAL — same idea.
 defaults:
   opencode:
     model: openrouter/z-ai/glm-4.7
+  # claude-code:
+  #   model: claude-sonnet-4-6
+  # codex:
+  #   model: gpt-5-codex
